@@ -1,0 +1,27 @@
+from faker import Faker
+from kafka import KafkaProducer
+import json
+import time
+
+fake = Faker()
+
+
+def get_registered_one():
+    return{
+        'name' : fake.name(),
+        'address' : fake.address(),
+        'created_at' : fake.year()
+    }
+
+def json_serializer(data):
+    return json.dumps(data).encode('utf-8')
+
+producer = KafkaProducer(bootstrap_servers = ['[kafka-server-ip-address]:[kafka-port]'], value_serializer = json_serializer)
+
+
+if __name__ == "__main__":
+    while True:
+        registered_data = get_registered_one()
+        print(producer.send('[your topic]', registered_data))
+        print(registered_data)
+        time.sleep(5)
