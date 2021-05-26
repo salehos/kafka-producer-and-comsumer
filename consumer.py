@@ -13,7 +13,7 @@ def consumer(servers, group, topic):
     c.subscribe([topic])
     return c
 
-c = consumer("[your-kafka-server-ip]:[kafka-port]", 1, "[kafka topic]")
+c = consumer("51.178.160.66:9092", 1, "log-test")
 
 while True:
     msg = c.poll(1.0)
