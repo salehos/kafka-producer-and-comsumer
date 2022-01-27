@@ -1,6 +1,9 @@
-from confluent_kafka import Consumer, KafkaError
-from confluent_kafka import Producer
+from confluent_kafka import Consumer
 import json
+from decouple import config
+KAFKA_SERVERS = config("KAFKA_SERVERS")
+KAFKA_TOPIC = config("KAFKA_TOPIC")
+KAFKA_GROUP_ID = config("KAFKA_GROUP_ID")
 
 def consumer(servers, group, topic):
     c = Consumer({
@@ -13,7 +16,7 @@ def consumer(servers, group, topic):
     c.subscribe([topic])
     return c
 
-c = consumer("51.178.160.66:9092", 1, "log-test")
+c = consumer(KAFKA_SERVERS, KAFKA_GROUP_ID, KAFKA_TOPIC)
 
 while True:
     msg = c.poll(1.0)

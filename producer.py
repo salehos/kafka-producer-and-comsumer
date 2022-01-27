@@ -1,84 +1,33 @@
-from kafka import KafkaProducer
+import confluent_kafka
 import json
-import time
-from datetime import datetime, timedelta
-
-
-def get_registered_one(line):
-    data = line.split(" ")
-    our_date = str(data[0])+ " " + str(data[1])
-    our_date = datetime.strptime(our_date, '%Y-%m-%d %H:%M:%S,%f')
-    tmstmp = datetime.timestamp(our_date)
-    tmstmp = int(tmstmp)/100
-    return('@timestamp : '+ str(tmstmp)[:6]+ ', network : '+ str(data[3])+' token : '+str(data[5]))
-        
-    
-
-        
+from requests.exceptions import ConnectTimeout
+from decouple import config
+KAFKA_SERVERS = config("KAFKA_SERVERS")
+KAFKA_TOPIC = config("KAFKA_TOPIC")
 
 def json_serializer(data):
     return json.dumps(data).encode('utf-8')
 
 
+def delivery_report(err, msg):
+    """ Called once for each message produced to indicate delivery result.
+        Triggered by poll() or flush(). """
+    if err is not None:
+        print('Message delivery failed: {}'.format(err))
+    else:
+        print('Message delivered to {} [{}]'.format(
+            msg.topic(), msg.partition()))
 
-if __name__ == "__main__":
-    f = open("/home/saleh/Desktop/new2.log", "r+")
-    lines = []
-    lines = f.readlines()
-    f.close()
-    f = open(f"/home/saleh/Desktop/new11.log", "w+")
-    for i in range(0, 50000):
-        try:
-            registered_data = get_registered_one(lines[i])
-            f.write(registered_data)
-        except:
-            continue 
-    f.close()
-
-    f = open(f"/home/saleh/Desktop/new12.log", "a+")
-    for i in range(50001, 100000):
-        try:
-            registered_data = get_registered_one(lines[i])
-            f.write(registered_data)
-        except:
-            continue 
-    f.close()
-
-    f = open(f"/home/saleh/Desktop/new13.log", "a+")
-    for i in range(100001, 150000):
-        try:
-            registered_data = get_registered_one(lines[i])
-            f.write(registered_data)
-        except:
-            continue 
-    f.close()
-
-    f = open(f"/home/saleh/Desktop/new14.log", "a+")
-    for i in range(150000, len(lines)):
-        try:
-            registered_data = get_registered_one(lines[i])
-            f.write(registered_data)
-        except:
-            continue 
-    f.close()
-
-
-    # for line in lines:
-    #     try:
-    #         f = open(f"/home/saleh/Desktop/new{int(j/50000)+5}.log", "w+")
-    #         registered_data = get_registered_one(line)
-    #         f.write(registered_data)
-    #         f.close()
-    #         j += 1
-    #     except:
-    #         continue   
+def send_to_kafka(kafka_servers, json_message, kafka_topic):
+    p = confluent_kafka.Producer({'bootstrap.servers': kafka_servers})
+    p.poll(0)
+    p.produce(kafka_topic,json.dumps(json_message),callback=delivery_report)
+    try:
+        re = p.flush(timeout=10)
+        if re > 0:
+            raise ConnectTimeout
+    except:
+        raise ConnectTimeout
     
-        # 
-        #     registered_data = get_registered_one(line)
-        #     print(producer.send('log-test', registered_data))
-        #     print(registered_data)
-        # except:
-        #     continue
-    # producer.send('log-test', "Helloooooooooooooooooooo")
-
-
+# in second arg of send_to_kafka function you must send your json message
+send_to_kafka(KAFKA_SERVERS, {"Hello" : "World"}, KAFKA_TOPIC)
